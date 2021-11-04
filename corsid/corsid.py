@@ -1,0 +1,324 @@
+import sys
+import pysam
+import argparse
+import numpy as np
+from util import (
+    make_score_func,
+    get_description,
+    get_name,
+)
+from solution import Solution
+from heuristic import (
+    guess_orf1ab,
+    predict_ORFs,
+)
+from MWIS import (
+    Interval,
+    MWIS,
+)
+from annotation import get_annotation_region
+
+# Default values
+WINDOW = 7
+TAU_MAX = 7
+TAU_MIN = 2
+SHRINK = 0.05
+
+
+# def get_candidate_region(fasta_file: str, annotation_file: str):
+#     regions = get_annotation_region(annotation_file)
+#     ref = pysam.FastaFile(fasta_file)
+#     contig = ref.references[0]
+#     start_pos = {}
+#     old_start = 0
+#     for name, (start, end) in regions.items():
+#         previous_ATG = ref.fetch(contig, 0, start).rfind("ATG")
+#         start_pos[name] = (max(old_start, previous_ATG), start)
+#         old_start = start
+#     return start_pos
+
+def get_candidate_region(fasta_file: str, annotation_file: str):
+    regions = get_annotation_region(annotation_file)
+    fasta = pysam.FastaFile(fasta_file)
+    contig = fasta.references[0]
+    ref = fasta.fetch(contig)
+    _, possible_trs = predict_ORFs(ref)
+    candidates = {}
+    old_start = 0
+    for name, (start, end) in regions.items():
+        previous_ATG = ref[:start].rfind("ATG")
+        previous_2ATG = ref[:previous_ATG].rfind("ATG")
+        if possible_trs[previous_ATG] - previous_ATG < 100:
+            candidates[name] = (max(old_start, previous_2ATG), start)
+        else:
+            candidates[name] = (max(old_start, previous_ATG), start)
+        old_start = start
+    return candidates
+
+
+def remove_partial(lefts, rights, partial):
+    for i in range(len(lefts)):
+        for intv in partial:
+            if intv.xa <= i <= intv.xb:
+                lefts[i] = []
+            else:
+                lefts[i] = [l for l in lefts[i] if (l.len_x_overlap(intv.xa, intv.xb) == 0 and
+                                                    l.len_x_overlap_orf(0, 200) < l.orf_len and
+                                                    l.len_x_overlap_orf(intv.orf_start, intv.orf_end) < l.orf_len)]
+    for i in range(len(rights)):
+        for intv in partial:
+            if intv.xa <= i <= intv.xb:
+                rights[i] = []
+            else:
+                rights[i] = [r for r in rights[i] if (r.len_x_overlap(intv.xa, intv.xb) == 0 and
+                                                      r.len_x_overlap_orf(0, 200) < r.orf_len and
+                                                      r.len_x_overlap_orf(intv.orf_start, intv.orf_end) < r.orf_len)]
+
+
+def semi_smith_waterman(s1: str, s2: str, window,
+                        match=1,
+                        mismatch=-1,
+                        tau_min=TAU_MIN,
+                        tau_max=TAU_MAX,
+                        orf_thr=100,
+                        shrink=0.05):
+    s1 = s1.upper()
+    s2 = s2.upper()
+    len1 = len(s1)
+    len2 = len(s2)
+    score_f = make_score_func(match, mismatch)
+    next_start, possible_trs = predict_ORFs(s2)
+
+    # Prepare diagonal scores for i >= window start
+    diag = np.zeros((len1 + 1, len2 + 1), dtype=int)
+    for j in range(len2):
+        for i in range(len1):
+            diag[i, j] = diag[i - 1, j - 1] + score_f(s1[i], s2[j])
+
+    # Prepare local alignment scores for i < window start
+    local = np.zeros((len1 + 1, len2 + 1), dtype=int)
+    origin = np.zeros((len1 + 1, len2 + 1, 2), dtype=int)
+    origin[0, :, 0] = 0
+    origin[0, :, 1] = np.arange(0, len2 + 1)
+    origin[-1, :, 0] = 0
+    origin[-1, :, 1] = np.arange(1, len2 + 2)
+    origin[:, 0, 0] = np.arange(0, len1 + 1)
+    origin[:, 0, 1] = 0
+    origin[:, -1, 0] = np.arange(1, len1 + 2)
+    origin[:, -1, 1] = 0
+    for j in range(len2):
+        for i in range(len1):
+            new_score = local[i - 1, j - 1] + score_f(s1[i], s2[j])
+            if new_score > 0:
+                local[i, j] = new_score
+                origin[i, j, :] = origin[i - 1, j - 1, :]
+            else:
+                local[i, j] = 0
+                origin[i, j, :] = [i, j]
+
+    # MWIS
+    score_sweep = {i: [0] * (len1 - window) for i in range(tau_min, tau_max+1)}
+    intervals_sweep = {i: [None] * (len1 - window) for i in range(tau_min, tau_max+1)}
+    for window_start in range(0, len1 - window):
+        d_intervals = {}
+        for idx_diag in range(1 - window_start, len2 - window_start - window + 1):
+            prev = window_start - 1
+            if window_start == 0:
+                delta = 0
+            else:
+                delta = local[prev, idx_diag + prev] - diag[prev, idx_diag + prev]
+            next_orf_start = next_start[idx_diag + window_start + window - 3]
+            if next_orf_start is None:
+                continue
+            next_orf_end = possible_trs[next_orf_start]
+            len_orf = next_orf_end - next_orf_start
+            
+            # try one more if length is not enough
+            if len_orf < orf_thr:
+                try:
+                    next_orf_start = next_start[next_orf_start+3]
+                except IndexError:
+                    continue
+                if next_orf_start is None:
+                    continue
+                next_orf_end = possible_trs[next_orf_start]
+                len_orf = next_orf_end - next_orf_start
+                if len_orf < orf_thr:
+                    continue
+
+            for i in range(window_start + window - 1, len1):
+                j = i + idx_diag
+                if j >= len2:
+                    break
+                cur_score = diag[i, j] + delta
+                if (
+                    (cur_score >= 2) and
+                    next_start[j] is not None
+                ):
+                    weight = float(len_orf) + cur_score / 1000
+                    if len_orf > orf_thr:
+                        y = origin[prev, idx_diag + prev, 0]
+                        x = origin[prev, idx_diag + prev, 1]
+                        shrink_start = int(next_orf_start + shrink * len_orf)
+                        shrink_end = int(next_orf_start + (1-shrink) * len_orf)
+                        if (shrink_start, shrink_end) not in d_intervals:
+                            d_intervals[shrink_start, shrink_end] = Interval(0, shrink_start, shrink_end, weight,
+                                        y + 1, i, x + 1, j, cur_score, len_orf, next_orf_start, next_orf_end)
+                        else:
+                            old_intv = d_intervals[shrink_start, shrink_end]
+                            if cur_score > old_intv.score:
+                                d_intervals[shrink_start, shrink_end] = Interval(0, shrink_start, shrink_end, weight,
+                                        y + 1, i, x + 1, j, cur_score, len_orf, next_orf_start, next_orf_end)
+
+        lefts = [[] for _ in range(len2)]
+        rights = [[] for _ in range(len2)]
+        # print(f"m={len(d_intervals)}", end=' ')
+        for (l, r), intv in d_intervals.items():
+            lefts[l].append(intv)
+            rights[r].append(intv)
+        idx_intv = 0
+        for right in rights:
+            for r in right:
+                r.idx = idx_intv
+                idx_intv += 1
+        score, intervals = MWIS(lefts, rights, thr=tau_max)
+        score_sweep[tau_max][window_start] = score
+        intervals_sweep[tau_max][window_start] = intervals
+
+        if len(intervals) == 0:
+            continue
+        remove_partial(lefts, rights, intervals)
+        for thr in range(tau_max - 1, tau_min-1, -1):
+            score, intervals = MWIS(lefts, rights, thr=thr)
+            if len(intervals) > 0:
+                intervals_sweep[thr][window_start] = merge_solutions(intervals_sweep[thr+1][window_start], intervals)
+                score_sweep[thr][window_start] = sum(i.w for i in intervals_sweep[thr][window_start])
+                remove_partial(lefts, rights, intervals_sweep[thr][window_start])
+            else:
+                intervals_sweep[thr][window_start] = intervals_sweep[thr+1][window_start]
+                score_sweep[thr][window_start] = score_sweep[thr+1][window_start]
+    return score_sweep, intervals_sweep
+
+
+def merge_solutions(sol1, sol2):
+    assert len(sol1) > 0
+    assert len(sol2) > 0
+    i = 0
+    j = 0
+    sol = []
+    while True:
+        if sol2[j].xa <= sol1[i].xa:
+            sol.append(sol1[i])
+            i += 1
+        else:
+            sol.append(sol2[j])
+            j += 1
+        if i >= len(sol1):
+            sol.extend(sol2[j:])
+            break
+        if j >= len(sol2):
+            sol.extend(sol1[i:])
+            break
+    return sol
+
+
+def corsid(ref, regions, annotation, description, name, window, tau_min, tau_max, mismatch, shrink):
+    leader_end, _, orf1ab_end = guess_orf1ab(ref)
+    leader_end = min(leader_end, 500)
+    offset = orf1ab_end - 200
+    leader = ref[:leader_end].replace('N', '-')
+    max_weight_sweep, intervals_sweep = semi_smith_waterman(leader, ref[offset:],
+                                                            window, mismatch=mismatch, 
+                                                            tau_min=tau_min, tau_max=tau_max,
+                                                            orf_thr=100, shrink=shrink)
+    solution1 = {s: Solution(max_weight_sweep[s], intervals_sweep[s], offset) for s in max_weight_sweep}
+    compact_score = solution1[tau_min].get_compact_score(ref, solution1[tau_min].offset)
+    result1 = solution1[tau_min].serialize_results(ref,
+                                          window,
+                                          name,
+                                          description,
+                                          regions,
+                                          annotation,
+                                          is_lex=True,
+                                          compact=compact_score)
+
+    return result1, compact_score
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--fasta", type=str, help="fasta file")
+    parser.add_argument("-g", "--gff", type=str, help="gff file")
+    parser.add_argument("-n", "--name", type=str,
+                        help="sample name",
+                        default=None)
+    parser.add_argument("-o", "--output", type=str, help="output file name")
+    parser.add_argument("-w", "--window", type=int,
+                        help=f"length of sliding window [{WINDOW}]",
+                        default=WINDOW)
+    parser.add_argument("-x", "--mismatch", type=int,
+                        help=f"mismatch score [-2]",
+                        default=-2)
+    parser.add_argument("-t", "--tau_min", type=int,
+                        help=f"minimum matching score threshold [{TAU_MIN}]",
+                        default=TAU_MIN)
+    parser.add_argument("-T", "--tau_max", type=int,
+                        help=f"maximum matching score threshold [{TAU_MAX}]",
+                        default=TAU_MAX)
+    parser.add_argument("--shrink", type=float,
+                        help=f"minimum matching score threshold [{SHRINK}]",
+                        default=SHRINK)
+    args = parser.parse_args(None if sys.argv[1:] else ['-h'])
+
+    print(' '.join(sys.argv))
+
+    fasta = pysam.Fastafile(args.fasta)
+    ref = fasta.fetch(fasta.references[0])
+    if args.gff:
+        annotation = get_annotation_region(args.gff)
+        regions = get_candidate_region(args.fasta, args.gff)
+    else:
+        annotation = None
+        regions = None
+    description = get_description(args.fasta)
+
+    if args.name is None:
+        name = get_name(args.fasta)
+    else:
+        name = args.name
+
+    result, compact_score = corsid(ref,
+                                       regions,
+                                       annotation,
+                                       description,
+                                       name,
+                                       args.window,
+                                       args.tau_min,
+                                       args.tau_max,
+                                       args.mismatch,
+                                       args.shrink)
+
+    # Fall back to smaller window if not compact enough
+    opt_pos = result.results[0].leader_core_start
+    if compact_score[opt_pos] >= 0.2:
+        result, _ = corsid(ref,
+                               regions,
+                               annotation,
+                               description,
+                               name,
+                               args.window - 1,
+                               args.tau_min,
+                               args.tau_max,
+                               args.mismatch,
+                               args.shrink)
+
+    print(args.name)
+    result.write_result()
+
+    if args.output:
+        with open(args.output, "w") as ofile:
+            ofile.write(result.to_json())
+
+
+if __name__ == "__main__":
+    main()

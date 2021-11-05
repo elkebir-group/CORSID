@@ -28,6 +28,7 @@ class BodyCore:
 
 
 class Result:
+    """Single result, contain a TRS alignment and induced genes"""
     bodys: List[BodyCore]
 
     def __init__(self, leader_core_start, window, intervals: List[Interval], offset, max_weight, compact, ref, regions):
@@ -39,7 +40,7 @@ class Result:
         self.TRS_L_start = min_core_s
         self.TRS_L_len = max_core_e - min_core_s + 1
         self.body_range_start = int(offset)
-        self.body_range_len = int(len(ref) - offset) # FIXME: is ref necessary?
+        self.body_range_len = int(len(ref) - offset)
         self.n_intervals = len(intervals)
         self.weight = float(max_weight)
         self.compact = float(compact)
@@ -51,8 +52,9 @@ class Result:
         recall = set()
         for i in intervals:
             for orf, (start, end) in regions.items():
-                # if not (i.end + offset) < start and not end < (i.start + offset):
-                if int(i.orf_start + offset) == end:
+                if (abs(i.orf_start + offset - start) <= 3 and
+                    abs(i.orf_end + offset - end) <= 3
+                ):
                     assign = orf
                     recall.add(orf)
                     break
@@ -80,6 +82,7 @@ class Result:
         self.TRS_L_seq = ref[min_core_s:max_core_e+1]
 
     def write_result(self, file=sys.stdout):
+        """Write result to stdout (default) or a file"""
         print(f"Leader core seq: {self.leader_core_seq}, "
               f"{self.leader_core_start}-{self.leader_core_start + self.leader_core_len}, "
               f"TRS-L: {self.TRS_L_start}-{self.TRS_L_start + self.TRS_L_len}\n"
@@ -111,11 +114,13 @@ class Result:
         writer.stream = file
         writer.write_table()
 
-    def to_json(self):
+    def to_json(self) -> str:
+        """Dump result to a json string"""
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 
 class ResultEncoder(json.JSONEncoder):
+    """Encoder for class `Results`"""
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -129,16 +134,18 @@ class ResultEncoder(json.JSONEncoder):
             return super().default(obj)
 
 
+@dataclass
 class Results:
+    """
+    Collection of results from a genome, with additional meta info
+    """
     results: List[Result]
-
-    def __init__(self, results: List[Result], name: str, description: str, annotation, ORF1ab: Tuple, reference: str):
-        self.results = results
-        self.name = name
-        self.description = description
-        self.genbank = annotation
-        self.ORF1ab = ORF1ab
-        self.sequence = reference
+    name: str
+    description: str
+    genbank: dict
+    ORF1ab: Tuple[int]
+    sequence: str
+    is_corsid_a: bool
     
     def write_result(self, file=sys.stdout):
         for res in self.results:
@@ -162,24 +169,58 @@ class Solution:
         self.weights = np.array(self.weights)
 
     def argsort(self, is_lex=False, compact=None) -> np.ndarray:
+        """Sort results
+
+        Args:
+            is_lex (bool, optional): set to True to sort in lexicographical order of (compact, weights, min alignment score). Defaults to False.
+            compact (list, optional): list of compact score. Defaults to None.
+
+        Returns:
+            np.ndarray: index in sorted order
+        """
         if is_lex and compact is not None:
             min_score = np.array([min(i.score for i in sol) if sol is not None and len(sol) > 0 else 0 for sol in self.intervals])
             return np.lexsort((-min_score, -self.weights, compact))
         else:
             return np.argsort(self.weights)[::-1]
 
-    def serialize_results(self, ref, window, name, description, regions=None, annotation=None, is_lex=False, compact=None) -> Results:
+    def serialize_results(self, ref: str, window: int, name: str, description: str,
+                          annotation=None, is_lex=False, compact=None, is_corsid_a=False) -> Results:
+        """Convert solution to `Results` in order to save
+
+        Args:
+            ref (str): reference genome
+            window (int): window length
+            name (str): name of the genome
+            description (str): description of the virus
+            annotation (dict, optional): genes in the annotation file. Defaults to None.
+            is_lex (bool, optional): set to True to enable lexicographical sorting, need compact as well. Defaults to False.
+            compact (ndarray, optional): list of genome coverage. Defaults to None.
+            is_corsid_a (bool, optional): is the solution created using CORSID-A. Defaults to False.
+
+        Returns:
+            Results: collection of TRS alignments
+        """
         results = []
         idx = self.argsort(is_lex, compact)
 
         for pos in idx:
             if self.intervals[pos] is None or len(self.intervals[pos]) == 0:
                 continue
-            results.append(Result(pos, window, self.intervals[pos], self.offset, self.weights[pos], compact[pos], ref, regions))
+            results.append(Result(pos, window, self.intervals[pos], self.offset, self.weights[pos], compact[pos], ref, annotation))
         start_1a, end_1a, end_1b = guess_orf1ab(ref)
-        return Results(results, name, description, annotation, (start_1a, end_1a, end_1a, end_1b), ref)
+        return Results(results, name, description, annotation, (start_1a, end_1a, end_1a, end_1b), ref, is_corsid_a)
 
-    def get_compact_score(self, ref: str, orf1_end: int):
+    def get_compact_score(self, ref: str, orf1_end: int) -> List[float]:
+        """Return genome coverage of solutions
+
+        Args:
+            ref (str): reference genome
+            orf1_end (int): the position of ORF1ab end
+
+        Returns:
+            List[float]: array of genome coverage
+        """
         compact_score = []
         total_length = len(ref) - orf1_end
         for i, sol in enumerate(self.intervals):

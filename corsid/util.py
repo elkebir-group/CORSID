@@ -23,6 +23,14 @@ def color_code(base):
 
 
 def render_color_seq(seq: str):
+    """Colorful base pairs
+
+    Args:
+        seq (str): base pairs
+
+    Returns:
+        str: base pairs with colors
+    """
     return ''.join(map(color_code, seq))
 
 

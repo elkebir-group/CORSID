@@ -17,6 +17,7 @@ from MWIS import (
     MWIS,
 )
 from annotation import get_annotation_region
+from typing import List, Dict, Tuple
 
 # Default values
 WINDOW = 7
@@ -25,38 +26,16 @@ TAU_MIN = 2
 SHRINK = 0.05
 
 
-# def get_candidate_region(fasta_file: str, annotation_file: str):
-#     regions = get_annotation_region(annotation_file)
-#     ref = pysam.FastaFile(fasta_file)
-#     contig = ref.references[0]
-#     start_pos = {}
-#     old_start = 0
-#     for name, (start, end) in regions.items():
-#         previous_ATG = ref.fetch(contig, 0, start).rfind("ATG")
-#         start_pos[name] = (max(old_start, previous_ATG), start)
-#         old_start = start
-#     return start_pos
+def remove_partial(lefts: List[List[Interval]],
+                   rights: List[List[Interval]],
+                   partial: List[Interval]):
+    """Remove intervals overlap with partial solution from lefts and rights
 
-def get_candidate_region(fasta_file: str, annotation_file: str):
-    regions = get_annotation_region(annotation_file)
-    fasta = pysam.FastaFile(fasta_file)
-    contig = fasta.references[0]
-    ref = fasta.fetch(contig)
-    _, possible_trs = predict_ORFs(ref)
-    candidates = {}
-    old_start = 0
-    for name, (start, end) in regions.items():
-        previous_ATG = ref[:start].rfind("ATG")
-        previous_2ATG = ref[:previous_ATG].rfind("ATG")
-        if possible_trs[previous_ATG] - previous_ATG < 100:
-            candidates[name] = (max(old_start, previous_2ATG), start)
-        else:
-            candidates[name] = (max(old_start, previous_ATG), start)
-        old_start = start
-    return candidates
-
-
-def remove_partial(lefts, rights, partial):
+    Args:
+        lefts (List[List[Interval]]): intervals indexed by left endpoints
+        rights (List[List[Interval]]): intervals indexed by right endpoints
+        partial (List[Interval]): partial solution
+    """
     for i in range(len(lefts)):
         for intv in partial:
             if intv.xa <= i <= intv.xb:
@@ -75,13 +54,34 @@ def remove_partial(lefts, rights, partial):
                                                       r.len_x_overlap_orf(intv.orf_start, intv.orf_end) < r.orf_len)]
 
 
-def semi_smith_waterman(s1: str, s2: str, window,
+def semi_smith_waterman(s1: str,
+                        s2: str,
+                        window: int,
                         match=1,
                         mismatch=-1,
                         tau_min=TAU_MIN,
                         tau_max=TAU_MAX,
                         orf_thr=100,
                         shrink=0.05):
+    """Modified Smith-Waterman
+
+    The DP table for each window start is stitched together by the local alignment table and the 
+    diagonal table at the row `window_start`.
+
+    Args:
+        s1 (str): leader sequence
+        s2 (str): body sequence
+        window (int): window length
+        match (int, optional): matching score. Defaults to 1.
+        mismatch (int, optional): mismatch score. Defaults to -1.
+        tau_min (int, optional): minimum tau (min score). Defaults to TAU_MIN.
+        tau_max (int, optional): maximum tau (min score). Defaults to TAU_MAX.
+        orf_thr (int, optional): ORF length threshold. Defaults to 100.
+        shrink (float, optional): ORF shrinking percentage. Defaults to 0.05.
+
+    Returns:
+        Tuple: maximum scores, and intervals
+    """
     s1 = s1.upper()
     s2 = s2.upper()
     len1 = len(s1)
@@ -121,8 +121,11 @@ def semi_smith_waterman(s1: str, s2: str, window,
     intervals_sweep = {i: [None] * (len1 - window) for i in range(tau_min, tau_max+1)}
     for window_start in range(0, len1 - window):
         d_intervals = {}
+        # Iterate along diagonal lines
         for idx_diag in range(1 - window_start, len2 - window_start - window + 1):
             prev = window_start - 1
+            # delta = the shift of the diagonal line caused by stitching with
+            # the local alignment table
             if window_start == 0:
                 delta = 0
             else:
@@ -133,7 +136,7 @@ def semi_smith_waterman(s1: str, s2: str, window,
             next_orf_end = possible_trs[next_orf_start]
             len_orf = next_orf_end - next_orf_start
             
-            # try one more if length is not enough
+            # try once more if length is not enough
             if len_orf < orf_thr:
                 try:
                     next_orf_start = next_start[next_orf_start+3]
@@ -148,6 +151,8 @@ def semi_smith_waterman(s1: str, s2: str, window,
 
             for i in range(window_start + window - 1, len1):
                 j = i + idx_diag
+                # Skip lower left triangular region,
+                # since it won't contain full window
                 if j >= len2:
                     break
                 cur_score = diag[i, j] + delta
@@ -200,7 +205,16 @@ def semi_smith_waterman(s1: str, s2: str, window,
     return score_sweep, intervals_sweep
 
 
-def merge_solutions(sol1, sol2):
+def merge_solutions(sol1: List[Interval], sol2: List[Interval]):
+    """Merge 2 solutions and sort them
+
+    Args:
+        sol1 (List[Interval]): Solution 1
+        sol2 (List[Interval]): Solution 2
+
+    Returns:
+        List[Interval]: Merged sorted solution
+    """
     assert len(sol1) > 0
     assert len(sol2) > 0
     i = 0
@@ -222,7 +236,31 @@ def merge_solutions(sol1, sol2):
     return sol
 
 
-def corsid(ref, regions, annotation, description, name, window, tau_min, tau_max, mismatch, shrink):
+def corsid(ref: str,
+           annotation: Dict[str, Tuple],
+           description: str,
+           name: str,
+           window: int,
+           tau_min: int=TAU_MIN,
+           tau_max: int=TAU_MAX,
+           mismatch: int=-1,
+           shrink: float=0.05):
+    """Entrypoint of CORSID
+
+    Args:
+        ref (str): reference genome
+        annotation (Dict[str, Tuple]): genes in the annotation file
+        description ([type]): description string in the annotation file
+        name ([type]): name of the genome
+        window ([type]): sweeping window length
+        tau_min (int, optional): minimum tau (min score). Defaults to TAU_MIN.
+        tau_max (int, optional): maximum tau (min score). Defaults to TAU_MAX.
+        mismatch (int, optional): mismatch score. Defaults to -1.
+        shrink (float, optional): ORF shrinking percentage. Defaults to 0.05.
+
+    Returns:
+        Tuple[Results, List[float]]: Results and compact scores for each result.
+    """
     leader_end, _, orf1ab_end = guess_orf1ab(ref)
     leader_end = min(leader_end, 500)
     offset = orf1ab_end - 200
@@ -237,7 +275,6 @@ def corsid(ref, regions, annotation, description, name, window, tau_min, tau_max
                                           window,
                                           name,
                                           description,
-                                          regions,
                                           annotation,
                                           is_lex=True,
                                           compact=compact_score)
@@ -276,10 +313,8 @@ def main():
     ref = fasta.fetch(fasta.references[0])
     if args.gff:
         annotation = get_annotation_region(args.gff)
-        regions = get_candidate_region(args.fasta, args.gff)
     else:
         annotation = None
-        regions = None
     description = get_description(args.fasta)
 
     if args.name is None:
@@ -288,7 +323,6 @@ def main():
         name = args.name
 
     result, compact_score = corsid(ref,
-                                       regions,
                                        annotation,
                                        description,
                                        name,
@@ -302,7 +336,6 @@ def main():
     opt_pos = result.results[0].leader_core_start
     if compact_score[opt_pos] >= 0.2:
         result, _ = corsid(ref,
-                               regions,
                                annotation,
                                description,
                                name,

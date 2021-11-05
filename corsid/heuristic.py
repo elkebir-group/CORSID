@@ -1,6 +1,14 @@
 import pandas as pd
 
 def get_df_orf(ref):
+    """Get as dataframe of all possible ORFs
+
+    Args:
+        ref (str): reference genome
+
+    Returns:
+        pd.DataFrame: dataframe of all possible ORFs
+    """
     possible_orf = []
     start_pos = []
     start_pos.append(ref.find('ATG'))
@@ -36,19 +44,6 @@ def guess_orf1ab(ref):
     """
     df_orf = get_df_orf(ref)
 
-    # percent = 0.21
-    # orf1a_start = None
-    # orf1a_end = None
-    # df_orf1a = df_orf[df_orf["stop"] > len(ref) * percent]
-    # if len(df_orf1a) > 0:
-    #     orf1a_start = df_orf1a.iloc[0]["start"]
-    #     orf1a_end = df_orf1a.iloc[0]["stop"]
-
-    # df_orf1ab = df_orf[(df_orf["start"] > orf1a_end - 100) & (
-    #     (df_orf["stop"] - df_orf["start"]) > len(ref) * percent)]
-    # if len(df_orf1ab) > 0:
-    #     return orf1a_start, orf1a_end, df_orf1ab.iloc[0]["start"], df_orf1ab.iloc[0]["stop"]
-
     length = len(ref)
     founds = []
     stop_codons = ["TAA", "TAG", "TGA"]
@@ -74,7 +69,14 @@ def guess_orf1ab(ref):
 
 
 def predict_ORFs(seq: str):
-    """Predict putative ORFs"""
+    """Predict putative ORFs
+
+    Args:
+        seq (str): genome
+
+    Returns:
+        tuple: the list of next start codons, and corresponding stop codon for each start codon
+    """
     length = len(seq)
     start_pos = []
     start_pos.append(seq.find('ATG'))
@@ -102,21 +104,13 @@ def predict_ORFs(seq: str):
         if seq[i:i+3] in stop_codons:
             stop_pos.append(i)
 
-    possible_trs = {}
+    next_stop = {}
     for start in start_pos:
         for stop in stop_pos:
             if stop > start and (stop - start) % 3 == 0:
-                possible_trs[start] = stop
+                next_stop[start] = stop
                 break
         else:
-            possible_trs[start] = length - 1
+            next_stop[start] = length - 1
 
-    return next_start, possible_trs
-
-if __name__ == "__main__":
-    seq = "ATGATCTAACAATGAATTAAGTAATCAATG"
-    next_start, possible_trs = predict_ORFs(seq)
-    print(''.join(f"{x:<2} " for x in range(len(seq))))
-    print('  '.join(seq))
-    print(''.join(f"{x:<2} " for x in next_start))
-    print(possible_trs)
+    return next_start, next_stop

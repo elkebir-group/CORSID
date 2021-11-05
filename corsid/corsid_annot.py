@@ -103,9 +103,13 @@ def semi_smith_waterman(s1: str, s2: str, genes, window, match=1, mismatch=-1, i
             max_score = float("-inf")
             max_intv = None
             for i in range(window_start + window - 1, len1):
+                # Skip lower left triangular region,
+                # since it won't contain full window
                 for j in range(start+window+i-window_start-window+1, end):
                     idx_diag = j - i
                     prev = window_start - 1
+                    # delta = the shift of the diagonal line caused by stitching with
+                    # the local alignment table
                     if window_start == 0:
                         delta = 0
                     else:
@@ -145,7 +149,7 @@ def corid_annot(ref, regions, annotation, name, description, window, mismatch):
 
     solution = Solution(score_sweep, intervals_sweep, leader_end)
     compact_score = solution.get_compact_score(ref, leader_end)
-    result = solution.serialize_results(ref, window, name, description, regions, annotation, compact=compact_score)
+    result = solution.serialize_results(ref, window, name, description, annotation, compact=compact_score, is_corsid_a=True)
 
     return result
 

@@ -4,6 +4,8 @@ CORSID is a computational tool to simultaneously identifying TRS sites and gene 
 We also provide another tool CORSID-A that only identifies TRS sites given annotated genes.
 Given an genome (optionally with their annotation), CORSID(-A) will find the TRS alignment and the core sequence.
 
+The data and results can be found in the repo [CORSID-data](https://github.com/elkebir-group/CORSID-data). The visualized results of our tool applied to 468 coronavirus genomes can be found in [CORSID-viz](https://elkebir-group.github.io/CORSID-viz/).
+
 ![Figure](doc/overview.png)
 
 ## Contents
@@ -35,7 +37,7 @@ Given an genome (optionally with their annotation), CORSID(-A) will find the TRS
 
 ### Using conda (recommended)
 
-1. Create a new conda environment named "moss" and install dependencies:
+1. Create a new conda environment named "corsid" and install dependencies:
 
    ```bash
    conda create -n corsid
@@ -52,6 +54,12 @@ Given an genome (optionally with their annotation), CORSID(-A) will find the TRS
 
 ### Using pip (alternative)
 
+We recommend installing in a virtual environment, as decribed in step 1 and 2 in the previous section.
+Use `pip` to install the package:
+
+```bash
+pip install corsid
+```
 
 <a name="usage"></a>
 

@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+
+from corsid.corsid_annot import main
+main()

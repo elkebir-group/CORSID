@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 import json
-from util import render_color_seq
-from heuristic import guess_orf1ab
-from MWIS import Interval
+from .util import render_color_seq
+from .heuristic import guess_orf1ab
+from .MWIS import Interval
 import numpy as np
 from pytablewriter import MarkdownTableWriter
 from pytablewriter.style import Style

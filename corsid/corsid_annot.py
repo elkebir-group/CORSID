@@ -2,21 +2,21 @@ import sys
 import pysam
 import argparse
 import numpy as np
-from util import (
+from .util import (
     get_name,
     make_score_func,
     get_description,
     timing,
 )
-from solution import Solution
-from heuristic import (
+from .solution import Solution
+from .heuristic import (
     guess_orf1ab,
     predict_ORFs,
 )
-from MWIS import (
+from .MWIS import (
     Interval,
 )
-from annotation import get_annotation_region
+from .annotation import get_annotation_region
 
 def get_candidate_region(fasta_file: str, annotation_file: str):
     regions = get_annotation_region(annotation_file)

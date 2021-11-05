@@ -2,21 +2,21 @@ import sys
 import pysam
 import argparse
 import numpy as np
-from util import (
+from .util import (
     make_score_func,
     get_description,
     get_name,
 )
-from solution import Solution
-from heuristic import (
+from .solution import Solution
+from .heuristic import (
     guess_orf1ab,
     predict_ORFs,
 )
-from MWIS import (
+from .MWIS import (
     Interval,
     MWIS,
 )
-from annotation import get_annotation_region
+from .annotation import get_annotation_region
 from typing import List, Dict, Tuple
 
 # Default values

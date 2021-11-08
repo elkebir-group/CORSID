@@ -78,7 +78,7 @@ The program also outputs to the standard output, where it shows tables of soluti
 
 ### Example
 
-After installation, you can check if the program runs correctly by analzing the SARS-CoV-2 genome (NC_045512) as follows:
+After installation, you can check if the program runs correctly by analyzing the SARS-CoV-2 genome (NC_045512) as follows:
 ```bash
 git clone git@github.com:elkebir-group/CORSID.git
 cd CORSID

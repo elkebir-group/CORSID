@@ -157,8 +157,11 @@ def corid_annot(ref, regions, annotation, name, description, window, mismatch):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--fasta", type=str, help="fasta file")
-    parser.add_argument("-g", "--gff", type=str, help="gff file")
+
+    required = parser.add_argument_group('required arguments')
+    required.add_argument("-f", "--fasta", required=True, type=str, help="FASTA genome file")
+    required.add_argument("-g", "--gff", required=True, type=str, help="GFF annotation file")
+    
     parser.add_argument("-n", "--name", type=str,
                         help="sample name",
                         default=None)
@@ -170,7 +173,7 @@ def main():
                         help=f"mismatch score [-2]",
                         default=-2)
     parser.add_argument("-s", "--score", type=int,
-                        help=f"minimum matching score threshold [{SCORE}]",
+                        help=f"minimum alignment score threshold [{SCORE}]",
                         default=SCORE)
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 

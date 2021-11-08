@@ -285,8 +285,12 @@ def corsid(ref: str,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--fasta", type=str, help="fasta file")
-    parser.add_argument("-g", "--gff", type=str, help="gff file")
+
+    required = parser.add_argument_group('required arguments')
+    required.add_argument("-f", "--fasta", required=True,
+                          type=str, help="FASTA genome file")
+
+    parser.add_argument("-g", "--gff", type=str, help="GFF annotation file")
     parser.add_argument("-n", "--name", type=str,
                         help="sample name",
                         default=None)
@@ -304,7 +308,7 @@ def main():
                         help=f"maximum matching score threshold [{TAU_MAX}]",
                         default=TAU_MAX)
     parser.add_argument("--shrink", type=float,
-                        help=f"minimum matching score threshold [{SHRINK}]",
+                        help=f"fraction of positions that may overlap between consecutive genes [{SHRINK}]",
                         default=SHRINK)
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 

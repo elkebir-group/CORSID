@@ -1,8 +1,7 @@
 # CORSID
 
-CORSID is a computational tool to simultaneously identifying TRS sites and gene locations in unannotated coronavirus genomes.
-We also provide another tool CORSID-A that only identifies TRS sites given annotated genes.
-Given an genome (optionally with their annotation), CORSID(-A) will find the TRS alignment and the core sequence.
+CORSID is a computational tool to simultaneously identify TRS sites, the core sequence and gene locations given an unannotated coronavirus genome sequence.
+We also provide another tool, CORSID-A, which identifies TRS sites and the core sequence given a coronavirus genome sequence with annotated gene locations.
 
 The data and results can be found in the repo [CORSID-data](https://github.com/elkebir-group/CORSID-data). The visualized results of our tool applied to 468 coronavirus genomes can be found in [CORSID-viz](https://elkebir-group.github.io/CORSID-viz/).
 
@@ -54,7 +53,7 @@ The data and results can be found in the repo [CORSID-data](https://github.com/e
 
 ### Using pip (alternative)
 
-We recommend installing in a virtual environment, as decribed in step 1 and 2 in the previous section.
+We recommend installing in a virtual environment, as decribed in steps 1 and 2 in the previous section.
 Use `pip` to install the package:
 
 ```bash

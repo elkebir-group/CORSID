@@ -16,8 +16,7 @@ The data and results can be found in the repo [CORSID-data](https://github.com/e
       * [Using pip](#pip) (alternative)
   3. [Usage instructions](#usage)
       * [I/O formates](#io)
-      * [Conda/compiled usage](#conda-usage)
-      * [Docker usage](#docker-usage)
+      * [Example](#example)
 
 <a name="pre-requisites"></a>
 
@@ -75,6 +74,8 @@ CORSID-A takes a **FASTA file and an annotation file (GFF format)** as input. It
 
 The output is an JSON file containing sorted solutions and auxilary information. This file can be used as the input to the [visualization webapp](https://elkebir-group.github.io/CORSID-viz/#/Viz).
 The program also outputs to the standard output, where it shows tables of solutions and visualization of TRS alignment.
+
+<a name="example"></a>
 
 ### Example
 

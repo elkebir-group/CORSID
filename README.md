@@ -40,7 +40,7 @@ The data and results can be found in the repo [CORSID-data](https://github.com/e
 1. Create a new conda environment named "corsid" and install dependencies:
 
    ```bash
-   conda create -n corsid
+   conda create -n corsid python=3.7
    ```
 
 2. Then activate the created environment: `conda activate corsid`.
@@ -73,5 +73,30 @@ CORSID takes a **FASTA file** containing the complete genome as input. Optionall
 
 CORSID-A takes a **FASTA file and an annotation file (GFF format)** as input. It will find candidate regions for each gene given the annotation file, and run CORSID-A on candidate regions.
 
-The output is an JSON file containing sorted solutions and auxilary information. This file can be used as the input to the visualization webapp (**link**).
+The output is an JSON file containing sorted solutions and auxilary information. This file can be used as the input to the [visualization webapp](https://elkebir-group.github.io/CORSID-viz/#/Viz).
 The program also outputs to the standard output, where it shows tables of solutions and visualization of TRS alignment.
+
+### Example
+
+After installation, you can check if the program runs correctly using following steps:
+```bash
+git clone git@github.com:elkebir-group/CORSID.git
+cd CORSID
+corsid -f test/NC_045512.fasta -o test/NC_045512.json > test/NC_045512.txt
+```
+You can find a list of solutions displayed as tables in `test/NC_045512.txt`. The best solution should be the same as the figure below:
+![Expected result](doc/expected_result_nogff.png)
+
+You can also use option `-g test/NC_045512.gff` to validate the identified genes.
+```bash
+corsid -f test/NC_045512.fasta -g test/NC_045512.gff \
+    -o test/NC_045512.json > test/NC_045512.txt
+```
+The result will look like:
+![Expected result](doc/expected_result_gff.png)
+
+Similarly, you can also run CORSID-A with command:
+```bash
+corsid_a -f test/NC_045512.fasta -g test/NC_045512.gff \
+    -o test/NC_045512.corsid_a.json > test/NC_045512.corsid_a.txt
+```

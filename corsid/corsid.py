@@ -256,7 +256,7 @@ def corsid(ref: str,
         tau_min (int, optional): minimum tau (min score). Defaults to TAU_MIN.
         tau_max (int, optional): maximum tau (min score). Defaults to TAU_MAX.
         mismatch (int, optional): mismatch score. Defaults to -1.
-        shrink (float, optional): ORF shrinking percentage. Defaults to 0.05.
+        shrink (float, optional): fraction of positions that may overlap between consecutive genes. Defaults to 0.05.
 
     Returns:
         Tuple[Results, List[float]]: Results and compact scores for each result.
@@ -345,7 +345,6 @@ def main():
                                args.mismatch,
                                args.shrink)
 
-    print(args.name)
     result.write_result()
 
     if args.output:

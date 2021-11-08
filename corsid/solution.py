@@ -86,7 +86,8 @@ class Result:
         print(f"Leader core seq: {self.leader_core_seq}, "
               f"{self.leader_core_start}-{self.leader_core_start + self.leader_core_len}, "
               f"TRS-L: {self.TRS_L_start}-{self.TRS_L_start + self.TRS_L_len}\n"
-              f"max weight: {self.weight}, compact: {self.compact:.5f}, Missing: {self.missing_ORF}",
+              f"weight: {self.weight:.3f}, coverage: {1-self.compact:.5f}, Missing: {self.missing_ORF}, "
+              f"min score: {min(body.score for body in self.bodys)}",
               file=file)
         header = ["ORF", "interval start-end", "interval len", "weight",
                 "core start-end", "leader start-end", "ORF start-end", "score", "ORF len", "index", render_color_seq(self.TRS_L_seq)]

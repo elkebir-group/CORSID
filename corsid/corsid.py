@@ -18,6 +18,7 @@ from .MWIS import (
 )
 from .annotation import get_annotation_region
 from typing import List, Dict, Tuple
+from tqdm import tqdm
 
 # Default values
 WINDOW = 7
@@ -119,7 +120,7 @@ def semi_smith_waterman(s1: str,
     # MWIS
     score_sweep = {i: [0] * (len1 - window) for i in range(tau_min, tau_max+1)}
     intervals_sweep = {i: [None] * (len1 - window) for i in range(tau_min, tau_max+1)}
-    for window_start in range(0, len1 - window):
+    for window_start in tqdm(range(0, len1 - window)):
         d_intervals = {}
         # Iterate along diagonal lines
         for idx_diag in range(1 - window_start, len2 - window_start - window + 1):

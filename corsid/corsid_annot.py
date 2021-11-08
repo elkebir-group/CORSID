@@ -17,6 +17,7 @@ from .MWIS import (
     Interval,
 )
 from .annotation import get_annotation_region
+from tqdm import tqdm
 
 def get_candidate_region(fasta_file: str, annotation_file: str):
     regions = get_annotation_region(annotation_file)
@@ -96,7 +97,7 @@ def semi_smith_waterman(s1: str, s2: str, genes, window, match=1, mismatch=-1, i
     # dynamic programming
     score_sweep = []
     intervals_sweep = []
-    for window_start in range(0, len1-window):
+    for window_start in tqdm(range(0, len1-window)):
         max_scores = []
         max_intervals = []
         for idx, (start, end) in enumerate(genes):

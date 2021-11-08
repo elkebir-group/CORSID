@@ -13,7 +13,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     version='0.1.0',
-    url='http://github.com/elkebir-group/CORSID ',
+    url='http://github.com/elkebir-group/CORSID',
     author='Chuanyi Zhang',
     author_email='chuanyi5@illinois.edu',
     license='MIT',

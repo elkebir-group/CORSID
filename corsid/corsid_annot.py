@@ -136,7 +136,7 @@ SCORE = 2
 
 @timing
 def corid_annot(ref, regions, annotation, name, description, window, mismatch):
-    leader_end, _, _ = guess_orf1ab(ref)
+    leader_end, _, orf1ab_end = guess_orf1ab(ref)
     leader_end = min(leader_end, 500)
     genes = list((s-leader_end, e-leader_end) for s, e in regions.values())
     genes = [gene for gene in genes if gene[0] > 0 and gene[1] > 0]
@@ -149,7 +149,7 @@ def corid_annot(ref, regions, annotation, name, description, window, mismatch):
                                                        mismatch=mismatch)
 
     solution = Solution(score_sweep, intervals_sweep, leader_end)
-    compact_score = solution.get_compact_score(ref, leader_end)
+    compact_score = solution.get_compact_score(ref, orf1ab_end)
     result = solution.serialize_results(ref, window, name, description, annotation, compact=compact_score, is_corsid_a=True)
 
     return result

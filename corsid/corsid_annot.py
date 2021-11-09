@@ -149,7 +149,7 @@ def corid_annot(ref, regions, annotation, name, description, window, mismatch):
                                                        mismatch=mismatch)
 
     solution = Solution(score_sweep, intervals_sweep, leader_end)
-    compact_score = solution.get_compact_score(ref, orf1ab_end)
+    compact_score = solution.get_compact_score(ref, orf1ab_end, offset=leader_end-orf1ab_end)
     result = solution.serialize_results(ref, window, name, description, annotation, compact=compact_score, is_corsid_a=True)
 
     return result

@@ -212,7 +212,7 @@ class Solution:
         start_1a, end_1a, end_1b = guess_orf1ab(ref)
         return Results(results, name, description, annotation, (start_1a, end_1a, end_1a, end_1b), ref, is_corsid_a)
 
-    def get_compact_score(self, ref: str, orf1_end: int) -> List[float]:
+    def get_compact_score(self, ref: str, orf1_end: int, offset: int=0) -> List[float]:
         """Return genome coverage of solutions
 
         Args:
@@ -230,6 +230,6 @@ class Solution:
             else:
                 cov = np.zeros(total_length)
                 for intv in sol:
-                    cov[intv.orf_start: intv.orf_end + 1] += 1
+                    cov[intv.orf_start + offset: intv.orf_end + offset + 1] += 1
                 compact_score.append((cov==0).mean())
         return np.array(compact_score)

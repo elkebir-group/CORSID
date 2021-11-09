@@ -230,6 +230,6 @@ class Solution:
             else:
                 cov = np.zeros(total_length)
                 for intv in sol:
-                    cov[intv.orf_start + offset: intv.orf_end + offset + 1] += 1
+                    cov[max(0, intv.orf_start + offset): intv.orf_end + offset + 1] += 1
                 compact_score.append((cov==0).mean())
         return np.array(compact_score)

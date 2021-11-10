@@ -11,8 +11,8 @@ The data and results can be found in the repo [CORSID-data](https://github.com/e
 
   1. [Pre-requisites](#pre-requisites)
   2. [Installation](#install)
-      * [Using conda](#conda) (recommended)
-      * [Using pip](#pip) (alternative)
+      * [Using pip](#pip)
+      * [Using conda](#conda)
   3. [Usage instructions](#usage)
       * [I/O formates](#io)
       * [Example](#example)
@@ -31,9 +31,25 @@ The data and results can be found in the repo [CORSID-data](https://github.com/e
 
 ## Installation
 
+<a name="pip"></a>
+
+### Using pip
+
+1. Create a new conda environment named "corsid" and install dependencies:
+
+   ```bash
+   conda create -n corsid python=3.7
+   ```
+
+2. Then activate the created environment: `conda activate corsid`.
+3. Use `pip` to install the package:
+    ```bash
+    pip install corsid
+    ```
+
 <a name="conda"></a>
 
-### Using conda (recommended)
+### Using conda
 
 1. Create a new conda environment named "corsid" and install dependencies:
 
@@ -47,17 +63,6 @@ The data and results can be found in the repo [CORSID-data](https://github.com/e
     ```bash
     conda install -c bioconda corsid
     ```
-
-<a name="pip"></a>
-
-### Using pip (alternative)
-
-We recommend installing in a virtual environment, as decribed in steps 1 and 2 in the previous section.
-Use `pip` to install the package:
-
-```bash
-pip install corsid
-```
 
 <a name="usage"></a>
 
@@ -100,3 +105,4 @@ Similarly, you can also run CORSID-A with command:
 corsid_a -f test/NC_045512.fasta -g test/NC_045512.gff \
     -o test/NC_045512.corsid_a.json > test/NC_045512.corsid_a.txt
 ```
+Note that the annotation GFF file is required for CORSID-A.

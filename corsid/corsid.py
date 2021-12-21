@@ -294,7 +294,9 @@ def main():
     parser.add_argument("-n", "--name", type=str,
                         help="sample name",
                         default=None)
-    parser.add_argument("-o", "--output", type=str, help="output file name")
+    parser.add_argument("-o", "--output", type=str, help="output json file name")
+    parser.add_argument("-r", "--output-orf", type=str,
+                        help="output identified ORFs (FASTA), only contains the first solution")
     parser.add_argument("-w", "--window", type=int,
                         help=f"length of sliding window [{WINDOW}]",
                         default=WINDOW)
@@ -355,6 +357,18 @@ def main():
     if args.output:
         with open(args.output, "w") as ofile:
             ofile.write(result.to_json())
+
+    if args.output_orf:
+        with open(args.output_orf, "w") as ofile:
+            content = []
+            ORFs = result.results[0].bodys
+            for i, body in enumerate(ORFs):
+                if body.ORF:
+                    content.append(f">{body.ORF}")
+                else:
+                    content.append(f">putative_ORF_{i+1}")
+                content.append(ref[body.ORF_start:body.ORF_start + body.ORF_len + 3])
+            ofile.write('\n'.join(content))
 
 
 if __name__ == "__main__":

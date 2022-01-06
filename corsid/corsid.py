@@ -297,6 +297,8 @@ def main():
     parser.add_argument("-o", "--output", type=str, help="output json file name")
     parser.add_argument("-r", "--output-orf", type=str,
                         help="output identified ORFs (FASTA), only contains the first solution")
+    parser.add_argument("-3", "--output-gff3", type=str,
+                        help="output identified ORFs (FASTA), only contains the first solution")
     parser.add_argument("-w", "--window", type=int,
                         help=f"length of sliding window [{WINDOW}]",
                         default=WINDOW)
@@ -357,6 +359,10 @@ def main():
     if args.output:
         with open(args.output, "w") as ofile:
             ofile.write(result.to_json())
+        # write GFF3 file
+        gff_name = '.'.join(args.output.split('.')[:-1] + ["gff"])
+        with open(gff_name, "w") as ofile:
+            ofile.write(result.to_gff())
 
     if args.output_orf:
         with open(args.output_orf, "w") as ofile:

@@ -2,7 +2,12 @@ import pandas as pd
 
 
 def parse_attributes(attr: str):
-    return dict(pair.split('=') for pair in attr.split(";") if len(pair) > 0)
+    l = []
+    for pair in attr.split(";"):
+        if len(pair) > 0:
+            k, v = pair.split('=')
+        l.append([k.lower(), v])
+    return dict(l)
 
 
 def get_annotation_region(annotation_file: str):

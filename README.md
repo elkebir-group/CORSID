@@ -6,7 +6,7 @@
 CORSID is a computational tool to simultaneously identify TRS sites, the core sequence and gene locations given an unannotated coronavirus genome sequence.
 We also provide another tool, CORSID-A, which identifies TRS sites and the core sequence given a coronavirus genome sequence with annotated gene locations.
 
-The data and results can be found in the repo [CORSID-data](https://github.com/elkebir-group/CORSID-data). The visualized results of our tool applied to 468 coronavirus genomes can be found in [CORSID-viz](https://elkebir-group.github.io/CORSID-viz/) [(source repo)](https://github.com/elkebir-group/CORSID-viz). Docker containers can be found in [CORSID-container](https://github.com/elkebir-group/CORSID-container).
+The data and results can be found in the repo [CORSID-data](https://github.com/elkebir-group/CORSID-data). The visualized results of our tool applied to 468 coronavirus genomes can be found in [CORSID-viz](https://elkebir-group.github.io/CORSID-viz/) [(source repo)](https://github.com/elkebir-group/CORSID-viz). Docker containers can be found in [CORSID-container](https://github.com/elkebir-group/CORSID-container) and [Docker hub](https://hub.docker.com/r/chuanyiz/corsid).
 
 ![Figure](doc/overview.png)
 
@@ -111,6 +111,9 @@ The output files will be `test/NC_045512.corsid.json`, `test/NC_045512.corsid.gf
 
 You can find a list of solutions displayed as tables in `test/NC_045512.corsid.txt`. The best solution should be the same as the figure below:
 ![Expected result](doc/expected_result_nogff.png)
+
+The corresponding GFF3 output should look like this:
+![Expected GFF output](doc/expected_GFF_output.png)
 
 You can also use option `-g test/NC_045512.gff` to validate the identified genes.
 ```bash

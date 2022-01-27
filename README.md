@@ -37,22 +37,6 @@ If you install with conda or pip as described bellow, then you don't need to man
 
 ## Installation
 
-<a name="pip"></a>
-
-### Using pip
-
-1. Create a new conda environment named "corsid" and install dependencies:
-
-   ```bash
-   conda create -n corsid python=3.7
-   ```
-
-2. Then activate the created environment: `conda activate corsid`.
-3. Use `pip` to install the package:
-    ```bash
-    pip install corsid
-    ```
-
 <a name="conda"></a>
 
 ### Using conda
@@ -70,6 +54,22 @@ If you install with conda or pip as described bellow, then you don't need to man
     conda install -c bioconda corsid
     ```
 
+<a name="pip"></a>
+
+### Using pip
+
+1. Create a new conda environment named "corsid" and install dependencies:
+
+   ```bash
+   conda create -n corsid python=3.7
+   ```
+
+2. Then activate the created environment: `conda activate corsid`.
+3. Use `pip` to install the package:
+    ```bash
+    pip install corsid
+    ```
+
 <a name="usage"></a>
 
 ## Usage instructions
@@ -78,12 +78,24 @@ If you install with conda or pip as described bellow, then you don't need to man
 
 ### I/O formats
 
-CORSID takes a **FASTA file** containing the complete genome as input. Optionally it also takes an **annotation file (GFF format)** to validate the identified genes.
+#### Input files
 
-CORSID-A takes a **FASTA file and an annotation file (GFF format)** as input. It will find candidate regions for each gene given the annotation file, and run CORSID-A on candidate regions.
+- **CORSID**: CORSID identifies TRS-L, TRS-Bs, and genes directly in the complete genome.
+  - **FASTA file**: the complete input genome
+  - _**GFF3 annotation (optional)**_: annotation file to validate the identified genes
+- **CORSID-A**: CORSID-A finds candidate regions for each gene given in the annotation file and identifies TRS-L and TRS-Bs in candidate regions.
+  - **FASTA file**: the complete input genome
+  - **GFF3 annotation**: known genes
 
-The output is an JSON file containing sorted solutions and auxilary information. This file can be used as the input to the [visualization webapp](https://elkebir-group.github.io/CORSID-viz/#/Viz).
-The program also outputs to the standard output, where it shows tables of solutions and visualization of TRS alignment.
+#### Output files
+
+- **CORSID**:
+  - **JSON `{filename}.json`**: sorted solutions and auxilary information. This file can be used as the input to the [visualization webapp](https://elkebir-group.github.io/CORSID-viz/#/Viz). Solutions are **sorted in lexicographical order of (genome coverage, total matching score, minimum score)**, where "genome coverage" is the count of bases covered by identified genes, "total matching score" is the sum of matching scores between TRS-L and all identified TRS-Bs in the solution, and "minimum score" is the smallest matching score in the solution.
+  - **GFF3 `{filename}.gff`**: annotated genes in GFF3 format of the optimal solution (the first one in the JSON output). Note that it shares the same file name as the JSON output, and the only difference is the extension.
+  - CORSID also outputs to the **standard output**. It shows tables of solutions and visualization of TRS alignment. Users can redirect the standard output to a file as shown below.
+- **CORSID-A**:
+  - **JSON `{filename}.json`**: sorted solutions and auxilary information. Solutions are **sorted by their total matching score**, which is the sum of matching scores of TRS-B and all identified TRS-Bs in the solution.
+  - **Standard output**: similar to output of CORSID.
 
 <a name="example"></a>
 
@@ -93,15 +105,17 @@ After installation, you can check if the program runs correctly by analyzing the
 ```bash
 git clone git@github.com:elkebir-group/CORSID.git
 cd CORSID
-corsid -f test/NC_045512.fasta -o test/NC_045512.json > test/NC_045512.txt
+corsid -f test/NC_045512.fasta -o test/NC_045512.corsid.json > test/NC_045512.corsid.txt
 ```
-You can find a list of solutions displayed as tables in `test/NC_045512.txt`. The best solution should be the same as the figure below:
+The output files will be `test/NC_045512.corsid.json`, `test/NC_045512.corsid.gff`, and `test/NC_045512.corsid.txt`.
+
+You can find a list of solutions displayed as tables in `test/NC_045512.corsid.txt`. The best solution should be the same as the figure below:
 ![Expected result](doc/expected_result_nogff.png)
 
 You can also use option `-g test/NC_045512.gff` to validate the identified genes.
 ```bash
 corsid -f test/NC_045512.fasta -g test/NC_045512.gff \
-    -o test/NC_045512.json > test/NC_045512.txt
+    -o test/NC_045512.corsid.json > test/NC_045512.corsid.txt
 ```
 The result will look like:
 ![Expected result](doc/expected_result_gff.png)
@@ -111,4 +125,4 @@ Similarly, you can also run CORSID-A with command:
 corsid_a -f test/NC_045512.fasta -g test/NC_045512.gff \
     -o test/NC_045512.corsid_a.json > test/NC_045512.corsid_a.txt
 ```
-Note that the annotation GFF file is required for CORSID-A.
+Note that the annotation GFF file is required for CORSID-A. The output files will be `test/NC_045512.corsid_a.json`, and `test/NC_045512.corsid_a.txt`.

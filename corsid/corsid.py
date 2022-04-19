@@ -19,6 +19,7 @@ from .MWIS import (
 from .annotation import get_annotation_region
 from typing import List, Dict, Tuple
 from tqdm import tqdm
+import gzip
 
 # Default values
 WINDOW = 7
@@ -357,8 +358,12 @@ def main():
     result.write_result()
 
     if args.output:
-        with open(args.output, "w") as ofile:
-            ofile.write(result.to_json())
+        if args.output.endswith(".gz") or args.output.endswith(".gzip"):
+            with gzip.open(args.output, "wt") as ofile:
+                ofile.write(result.to_json())
+        else:
+            with open(args.output, "w") as ofile:
+                ofile.write(result.to_json())
         # write GFF3 file
         gff_name = '.'.join(args.output.split('.')[:-1] + ["gff"])
         with open(gff_name, "w") as ofile:

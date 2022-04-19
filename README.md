@@ -8,6 +8,10 @@ We also provide another tool, CORSID-A, which identifies TRS sites and the core 
 
 The data and results can be found in the repo [CORSID-data](https://github.com/elkebir-group/CORSID-data). The visualized results of our tool applied to 468 coronavirus genomes can be found in [CORSID-viz](https://elkebir-group.github.io/CORSID-viz/) [(source repo)](https://github.com/elkebir-group/CORSID-viz). Docker containers can be found in [CORSID-container](https://github.com/elkebir-group/CORSID-container) and [Docker hub](https://hub.docker.com/r/chuanyiz/corsid).
 
+If you use CORSID in you work, please cite the following paper ([bioRxiv](https://doi.org/10.1101/2021.11.10.468129)):
+
+Zhang, Chuanyi, Palash Sashittal, and Mohammed El-Kebir. "CORSID enables de novo identification of transcription regulatory sequences and genes in coronaviruses." _bioRxiv_ (2021).
+
 ![Figure](doc/overview.png)
 
 ## Contents

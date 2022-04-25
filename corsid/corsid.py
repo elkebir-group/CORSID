@@ -132,7 +132,7 @@ def semi_smith_waterman(s1: str,
                 delta = 0
             else:
                 delta = local[prev, idx_diag + prev] - diag[prev, idx_diag + prev]
-            next_orf_start = next_start[idx_diag + window_start + window - 3]
+            next_orf_start = next_start[idx_diag + window_start + 2]
             if next_orf_start is None:
                 continue
             next_orf_end = possible_trs[next_orf_start]

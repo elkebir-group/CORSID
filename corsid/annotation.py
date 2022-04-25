@@ -51,12 +51,16 @@ def get_annotation_region(annotation_file: str):
             name = name[7:].strip()
         if name.startswith("orf"):
             name = name[3:].strip()
+        if isinstance(row["end"], str) and row["end"].startswith(">"):
+            end = int(row["end"][1:])
+        else:
+            end = int(row["end"])
         if name in regions:
             # take the union region if already overlapping a 
             a = regions[name][0]
             b = regions[name][1]
             c = row["start"] - 1
-            d = row["end"] - 1
+            d = end - 1
             if (
                 (a <= d and c <= b and
                 (min(b, d) - max(a, c)) / (max(b, d) - min(a, c)) >= 0.1)
@@ -65,9 +69,9 @@ def get_annotation_region(annotation_file: str):
             else:
                 while name in regions:
                     name += '#'
-                regions[name] = (row["start"] - 1, row["end"] - 1)
+                regions[name] = (row["start"] - 1, end - 1)
         else:
-            regions[name] = (row["start"] - 1, row["end"] - 1)
+            regions[name] = (row["start"] - 1, end - 1)
     return regions
 
 convert = {

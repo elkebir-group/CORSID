@@ -19,7 +19,7 @@ from .MWIS import (
 from .annotation import get_annotation_region
 from tqdm import tqdm
 
-def get_candidate_region(fasta_file: str, annotation_file: str):
+def get_candidate_region(fasta_file: str, annotation_file: str, window_size: int):
     regions = get_annotation_region(annotation_file)
     fasta = pysam.FastaFile(fasta_file)
     contig = fasta.references[0]
@@ -31,9 +31,9 @@ def get_candidate_region(fasta_file: str, annotation_file: str):
         previous_ATG = ref[:start].rfind("ATG")
         previous_2ATG = ref[:previous_ATG].rfind("ATG")
         if possible_trs[previous_ATG] - previous_ATG < 100:
-            candidates[name] = (max(old_start, previous_2ATG), start)
+            candidates[name] = (max(old_start, previous_2ATG), start + window_size)
         else:
-            candidates[name] = (max(old_start, previous_ATG), start)
+            candidates[name] = (max(old_start, previous_ATG), start + window_size)
         old_start = start
     return candidates
 
@@ -59,7 +59,7 @@ def semi_smith_waterman(s1: str, s2: str, genes, window, match=1, mismatch=-1, i
     len1 = len(s1)
     len2 = len(s2)
     score = make_score_func(match, mismatch, indel)
-    possible_orf = get_orf_length(s2, [start for _, start in genes])
+    possible_orf = get_orf_length(s2, [start-window for _, start in genes])
 
     # Prepare diagonal scores for i >= window start
     diag = np.zeros((len1+1, len2+1), dtype=int)
@@ -118,10 +118,10 @@ def semi_smith_waterman(s1: str, s2: str, genes, window, match=1, mismatch=-1, i
                     cur_score = diag[i, j] + delta
                     if cur_score >= 2 and cur_score >= max_score:
                         max_score = cur_score
-                        len_orf = possible_orf[end] - end
+                        len_orf = possible_orf[end - window] - end + window
                         x, y = origin[prev, idx_diag + prev, :]
                         max_intv = Interval(0, y, end, cur_score,
-                                            x+1, i, y+1, j, cur_score, len_orf, end, possible_orf[end])
+                                            x+1, i, y+1, j, cur_score, len_orf, end - window, possible_orf[end - window])
             if max_intv is not None:
                 max_scores.append(max_score)
                 max_intervals.append(max_intv)
@@ -181,7 +181,7 @@ def main():
 
     fasta = pysam.Fastafile(args.fasta)
     ref = fasta.fetch(fasta.references[0])
-    regions = get_candidate_region(args.fasta, args.gff)
+    regions = get_candidate_region(args.fasta, args.gff, args.window)
     annotation = get_annotation_region(args.gff)
     description = get_description(args.fasta)
 

@@ -165,13 +165,13 @@ class Results:
                    f"+\t.\tID=cds-1a;Parent=gene-1;Name=ORF1a")
         gff.append(f"{self.name}\t.\tCDS\t{self.ORF1ab[2] + 1}\t{self.ORF1ab[3] + 3}\t.\t"
                    f"+\t.\tID=cds-1b;Parent=gene-1;Name=ORF1b")
-        for i, body in enumerate(self.results[0].bodys):
+        for i, body in enumerate(self.results[0].bodys[::-1]):
             if body.ORF:
                 gene_id = f"gene-{body.ORF}"
             else:
                 gene_id = f"putative-gene-{i+2}"
             attributes = ["ID="+gene_id, "gene_biotype=protein_coding"]
-            gff.append(f"{self.name}\t.\tgene\t{body.ORF_start + 1}\t{body.ORF_start + body.ORF_len + 1}\t.\t"
+            gff.append(f"{self.name}\t.\tgene\t{body.ORF_start + 1}\t{body.ORF_start + body.ORF_len + 3}\t.\t"
                        f"+\t.\t{';'.join(attributes)}")
 
             attributes = [f"ID=cds-{i+2}", f"Parent={gene_id}"]
@@ -181,7 +181,7 @@ class Results:
             else:
                 attributes.append(f"Name=protein-{i+2}")
                 attributes.append(f"gene=ORF{i+2}")
-            gff.append(f"{self.name}\t.\tCDS\t{body.ORF_start + 1}\t{body.ORF_start + body.ORF_len + 1}\t.\t"
+            gff.append(f"{self.name}\t.\tCDS\t{body.ORF_start + 1}\t{body.ORF_start + body.ORF_len + 3}\t.\t"
                        f"+\t0\t{';'.join(attributes)}")
         return '\n'.join(gff)
 

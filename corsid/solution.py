@@ -37,6 +37,13 @@ class Result:
         self.leader_core_seq = ref[leader_core_start:leader_core_start+window]
         min_core_s = min(i.ya for i in intervals)
         max_core_e = max(i.yb for i in intervals)
+        # if min_core_s > leader_core_start:
+        #     min_core_s -= 1
+        #     max_core_e -= 1
+        #     for i in intervals:
+        #         i.ya -= 1
+        #         i.yb -= 1
+        #         i.start -= 1
         self.TRS_L_start = min_core_s
         self.TRS_L_len = max_core_e - min_core_s + 1
         self.body_range_start = int(offset)
@@ -211,7 +218,8 @@ class Solution:
         """
         if is_lex and compact is not None:
             min_score = np.array([min(i.score for i in sol) if sol is not None and len(sol) > 0 else 0 for sol in self.intervals])
-            return np.lexsort((-min_score, -self.weights, compact))
+            align_score = (self.weights - self.weights.astype(int)) * 1000
+            return np.lexsort((-min_score, -align_score, compact))
         else:
             return np.argsort(self.weights)[::-1]
 

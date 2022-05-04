@@ -20,12 +20,22 @@ from .annotation import get_annotation_region
 from typing import List, Dict, Tuple
 from tqdm import tqdm
 import gzip
+# import xgboost as xgb
+# import pathlib
 
 # Default values
 WINDOW = 7
 TAU_MAX = 7
 TAU_MIN = 2
 SHRINK = 0.05
+
+
+def information_content(seqs):
+    n = len(seqs)
+    seqs = [seq.upper() for seq in seqs]
+    cols = [''.join(col) for col in zip(*seqs)]
+    counts = [[col.count('A'), col.count('T'), col.count('C'), col.count('G'), col.count('-')] for col in cols]
+    return [2+sum([c/n * np.log2(c/n) for c in count if c > 0]) for count in counts]
 
 
 def remove_partial(lefts: List[List[Interval]],
@@ -315,6 +325,8 @@ def main():
     parser.add_argument("--shrink", type=float,
                         help=f"fraction of positions that may overlap between consecutive genes [{SHRINK}]",
                         default=SHRINK)
+    parser.add_argument("--no-missing-classifier", action='store_true',
+                        help="set flag to disable missing TRS-L classifier")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     print(' '.join(sys.argv))
@@ -354,6 +366,27 @@ def main():
                                args.tau_max,
                                args.mismatch,
                                args.shrink)
+
+    # if not args.no_missing_classifier:
+    #     clf = xgb.XGBClassifier()
+    #     model = pathlib.Path(__file__).parent.resolve() / "xgboost_training.json"
+    #     clf.load_model(model)
+    #     # leader, score, dist, information, mean score, compact, ORF1ab start
+    #     scores = [int(x.score) for x in result.results[0].bodys]
+    #     start = result.results[0].leader_core_start - result.results[0].TRS_L_start
+    #     end = start + result.results[0].leader_core_len
+    #     seqs = [x.align[start:end] for x in result.results[0].bodys]
+    #     features = [[
+    #         result.results[0].leader_core_start,
+    #         sum(scores),
+    #         result.ORF1ab[0] - result.results[0].leader_core_start,
+    #         np.mean(relative_information(seqs)),
+    #         np.mean(scores),
+    #         1 - result.results[0].compact,
+    #         result.ORF1ab[0]]]
+    #     decision = clf.predict(features)
+    #     # if decision[0, 0] == 0:
+    #     #     print("Possibly missing TRS-L.", file=os.stderr)
 
     result.write_result()
 

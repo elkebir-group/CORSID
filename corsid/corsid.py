@@ -20,8 +20,9 @@ from .annotation import get_annotation_region
 from typing import List, Dict, Tuple
 from tqdm import tqdm
 import gzip
-# import xgboost as xgb
-# import pathlib
+import xgboost as xgb
+import pathlib
+import warnings
 
 # Default values
 WINDOW = 7
@@ -29,6 +30,10 @@ TAU_MAX = 7
 TAU_MIN = 2
 SHRINK = 0.05
 
+def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    return f'{filename}:{lineno}: {category.__name__}:{message}\n'
+
+warnings.formatwarning = warning_on_one_line
 
 def information_content(seqs):
     n = len(seqs)
@@ -354,6 +359,10 @@ def main():
                                        args.mismatch,
                                        args.shrink)
 
+    if len(result.results) == 0:
+        warnings.warn("CORSID finds no solution. The input genome is possibly incomplete and missing a TRS-L.")
+        return -1
+
     # Fall back to smaller window if not compact enough
     opt_pos = result.results[0].leader_core_start
     if compact_score[opt_pos] >= 0.2:
@@ -367,26 +376,26 @@ def main():
                                args.mismatch,
                                args.shrink)
 
-    # if not args.no_missing_classifier:
-    #     clf = xgb.XGBClassifier()
-    #     model = pathlib.Path(__file__).parent.resolve() / "xgboost_training.json"
-    #     clf.load_model(model)
-    #     # leader, score, dist, information, mean score, compact, ORF1ab start
-    #     scores = [int(x.score) for x in result.results[0].bodys]
-    #     start = result.results[0].leader_core_start - result.results[0].TRS_L_start
-    #     end = start + result.results[0].leader_core_len
-    #     seqs = [x.align[start:end] for x in result.results[0].bodys]
-    #     features = [[
-    #         result.results[0].leader_core_start,
-    #         sum(scores),
-    #         result.ORF1ab[0] - result.results[0].leader_core_start,
-    #         np.mean(relative_information(seqs)),
-    #         np.mean(scores),
-    #         1 - result.results[0].compact,
-    #         result.ORF1ab[0]]]
-    #     decision = clf.predict(features)
-    #     # if decision[0, 0] == 0:
-    #     #     print("Possibly missing TRS-L.", file=os.stderr)
+    if not args.no_missing_classifier:
+        clf = xgb.XGBClassifier(n_jobs=1)
+        model = pathlib.Path(__file__).parent.resolve() / "xgboost_training.json"
+        clf.load_model(model)
+        # leader, score, dist, information, mean score, compact, ORF1ab start
+        scores = [int(x.score) for x in result.results[0].bodys]
+        start = result.results[0].leader_core_start - result.results[0].TRS_L_start
+        end = start + result.results[0].leader_core_len
+        seqs = [x.align[start:end] for x in result.results[0].bodys]
+        features = [[
+            result.results[0].leader_core_start,
+            sum(scores),
+            result.ORF1ab[0] - result.results[0].leader_core_start,
+            np.mean(information_content(seqs)),
+            np.mean(scores),
+            1 - result.results[0].compact,
+            result.ORF1ab[0]]]
+        decision = clf.predict(features)
+        if decision[0] == 1:
+            warnings.warn("The input genome is possibly incomplete and missing a TRS-L.")
 
     result.write_result()
 
@@ -414,6 +423,8 @@ def main():
                 content.append(ref[body.ORF_start:body.ORF_start + body.ORF_len + 3])
             ofile.write('\n'.join(content))
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

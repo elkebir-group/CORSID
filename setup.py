@@ -28,5 +28,6 @@ setuptools.setup(
         "pandas",
         "pytablewriter",
         "tqdm",
+        "xgboost"
     ],
 )

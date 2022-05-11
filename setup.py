@@ -12,7 +12,7 @@ setuptools.setup(
     description="Core Sequence Identifier",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version='0.1.2',
+    version='0.1.3',
     url='http://github.com/elkebir-group/CORSID',
     author='Chuanyi Zhang',
     author_email='chuanyi5@illinois.edu',
@@ -28,6 +28,8 @@ setuptools.setup(
         "pandas",
         "pytablewriter",
         "tqdm",
-        "xgboost"
+        "xgboost",
+        "scikit-learn",
     ],
+    package_data={'': ['xgboost_model.json']},
 )

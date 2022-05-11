@@ -378,7 +378,7 @@ def main():
 
     if not args.no_missing_classifier:
         clf = xgb.XGBClassifier(n_jobs=1)
-        model = pathlib.Path(__file__).parent.resolve() / "xgboost_training.json"
+        model = pathlib.Path(__file__).parent.resolve() / "xgboost_model.json"
         clf.load_model(model)
         # leader, score, dist, information, mean score, compact, ORF1ab start
         scores = [int(x.score) for x in result.results[0].bodys]

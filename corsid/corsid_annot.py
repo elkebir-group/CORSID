@@ -1,5 +1,4 @@
 import sys
-import pysam
 import argparse
 import numpy as np
 from .util import (
@@ -7,6 +6,7 @@ from .util import (
     make_score_func,
     get_description,
     timing,
+    read_fasta,
 )
 from .solution import Solution
 from .heuristic import (
@@ -21,9 +21,9 @@ from tqdm import tqdm
 
 def get_candidate_region(fasta_file: str, annotation_file: str, window_size: int):
     regions = get_annotation_region(annotation_file)
-    fasta = pysam.FastaFile(fasta_file)
-    contig = fasta.references[0]
-    ref = fasta.fetch(contig)
+    seqs = read_fasta(fasta_file)
+    contig = seqs[0]["name"]
+    ref = seqs[0]["seq"]
     _, possible_trs = predict_ORFs(ref)
     candidates = {}
     old_start = 0
@@ -179,8 +179,7 @@ def main():
 
     print(' '.join(sys.argv))
 
-    fasta = pysam.Fastafile(args.fasta)
-    ref = fasta.fetch(fasta.references[0])
+    ref = read_fasta(args.fasta)[0]["seq"]
     regions = get_candidate_region(args.fasta, args.gff, args.window)
     annotation = get_annotation_region(args.gff)
     description = get_description(args.fasta)

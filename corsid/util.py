@@ -1,5 +1,6 @@
 from functools import wraps
 from time import time
+from typing import Dict, List, Any
 
 def color_code(base):
     """Unix console color code for nucleotides
@@ -102,6 +103,45 @@ def get_name(fasta):
             if line.startswith(">"):
                 name_split = line.find(' ')
                 return line[1:name_split].strip()
+
+
+def read_fasta(fasta: str) -> List[Dict[str, Any]]:
+    """Get sequences from FASTA file
+
+    Args:
+        fasta (str): path to FASTA file
+
+    Returns:
+        Dict[str, str]: dictionary of sequences and their names.
+    """
+    with open(fasta) as ifile:
+        seqs = []
+        seq = ""
+        for line in ifile:
+            if line.startswith(">"):
+                if len(seq) > 0:
+                    seqs.append({
+                        "name": name,
+                        "description": description,
+                        "seq": seq
+                    })
+                    seq = ""
+                name_split = line.find(' ')
+                if name_split == -1:
+                    name_split = len(line)
+                name = line.strip()[1:name_split]
+                description = line.strip()[name_split:]
+            else:
+                if len(line) > 0:
+                    seq += line.strip()
+        if len(seq) > 0:
+            seqs.append({
+                "name": name,
+                "description": description,
+                "seq": seq
+            })
+            seq = ""
+        return seqs
 
 
 def timing(f):

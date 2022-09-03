@@ -24,7 +24,6 @@ setuptools.setup(
     ],
     install_requires=[
         "numpy",
-        "pysam",
         "pandas",
         "pytablewriter",
         "tqdm",

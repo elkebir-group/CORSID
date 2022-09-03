@@ -1,11 +1,11 @@
 import sys
-import pysam
 import argparse
 import numpy as np
 from .util import (
     make_score_func,
     get_description,
     get_name,
+    read_fasta,
 )
 from .solution import Solution
 from .heuristic import (
@@ -336,8 +336,7 @@ def main():
 
     print(' '.join(sys.argv))
 
-    fasta = pysam.Fastafile(args.fasta)
-    ref = fasta.fetch(fasta.references[0])
+    ref = read_fasta(args.fasta)[0]["seq"]
     if args.gff:
         annotation = get_annotation_region(args.gff)
     else:

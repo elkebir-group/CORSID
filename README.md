@@ -8,9 +8,8 @@ We also provide another tool, CORSID-A, which identifies TRS sites and the core 
 
 The data and results can be found in the repo [CORSID-data](https://github.com/elkebir-group/CORSID-data). The visualized results of our tool applied to 468 coronavirus genomes can be found in [CORSID-viz](https://elkebir-group.github.io/CORSID-viz/) [(source repo)](https://github.com/elkebir-group/CORSID-viz). Docker containers can be found in [CORSID-container](https://github.com/elkebir-group/CORSID-container) and [Docker hub](https://hub.docker.com/r/chuanyiz/corsid).
 
-If you use CORSID in you work, please cite the following paper ([bioRxiv](https://doi.org/10.1101/2021.11.10.468129)):
-
-Zhang, Chuanyi, Palash Sashittal, and Mohammed El-Kebir. "CORSID enables de novo identification of transcription regulatory sequences and genes in coronaviruses." _bioRxiv_ (2021).
+If you use CORSID in you work, please cite the following paper:
+> [Zhang, Chuanyi, Palash Sashittal, Michael Xiang, Yichi Zhang, Ayesha Kazi, and Mohammed El-Kebir. "Accurate Identification of Transcription Regulatory Sequences and Genes in Coronaviruses." _Molecular biology and evolution_ 39.7 (2022): msac133.](https://doi.org/10.1093/molbev/msac133)
 
 ![Figure](doc/overview.png)
 
@@ -33,6 +32,8 @@ Zhang, Chuanyi, Palash Sashittal, and Mohammed El-Kebir. "CORSID enables de novo
 + [pandas](https://pandas.pydata.org/pandas-docs/stable/index.html)
 + [pytablewriter](https://pytablewriter.readthedocs.io/en/latest/)
 + [tqdm](https://tqdm.github.io/)
++ [scikit-learn](https://scikit-learn.org/)
++ [XGBoost](https://xgboost.ai/)
 + (optional for simulation pipeline) [snakemake (>=5.2.0)](https://snakemake.readthedocs.io)
 
 If you install with conda or pip as described bellow, then you don't need to manually install these pakcages.

@@ -2,6 +2,7 @@
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/corsid/README.html)
 [![PyPI version](https://badge.fury.io/py/corsid.svg)](https://badge.fury.io/py/corsid)
+[![Downloads](https://pepy.tech/badge/corsid)](https://pypi.org/project/corsid/)
 
 CORSID is a computational tool to simultaneously identify TRS sites, the core sequence and gene locations given an unannotated coronavirus genome sequence.
 We also provide another tool, CORSID-A, which identifies TRS sites and the core sequence given a coronavirus genome sequence with annotated gene locations.
